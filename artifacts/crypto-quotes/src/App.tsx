@@ -4,8 +4,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { quotes } from "@/data/quotes";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Copy, Check } from "lucide-react";
 import { FaXTwitter } from "react-icons/fa6";
 import { motion, AnimatePresence } from "framer-motion";
 import NotFound from "@/pages/not-found";
@@ -15,6 +16,8 @@ const queryClient = new QueryClient();
 function Home() {
   const [currentQuoteIndex, setCurrentQuoteIndex] = useState<number>(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     setCurrentQuoteIndex(Math.floor(Math.random() * quotes.length));
@@ -32,8 +35,20 @@ function Home() {
   };
 
   const currentQuote = quotes[currentQuoteIndex] || quotes[0];
-  const tweetText = encodeURIComponent(`"${currentQuote.text}" — ${currentQuote.author}`);
+  const shareText = `"${currentQuote.text}" — ${currentQuote.author}`;
+  const tweetText = encodeURIComponent(shareText);
   const tweetUrl = `https://twitter.com/intent/tweet?text=${tweetText}`;
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(shareText);
+      setCopied(true);
+      toast({ title: "Copied to clipboard" });
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast({ title: "Failed to copy", variant: "destructive" });
+    }
+  };
 
   return (
     <div className="min-h-[100dvh] w-full flex items-center justify-center relative overflow-hidden bg-background text-foreground selection:bg-primary/30 selection:text-primary">
@@ -80,20 +95,36 @@ function Home() {
           <Button 
             onClick={handleNewQuote}
             disabled={isAnimating}
+            data-testid="button-next-quote"
             className="w-full sm:w-auto min-w-[200px] flex-1 sm:flex-none rounded-none bg-primary text-primary-foreground hover:bg-primary/90 h-14 text-sm font-mono uppercase tracking-widest border border-primary/50 transition-all duration-300 disabled:opacity-70 group"
           >
             <RefreshCw className={`w-4 h-4 mr-3 ${isAnimating ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-500"}`} />
-            Next Block
+            Next Quote
           </Button>
-          
+
+          <Button
+            onClick={handleCopy}
+            variant="outline"
+            data-testid="button-copy"
+            className="w-full sm:w-auto h-14 px-8 rounded-none border-border/50 hover:bg-white/5 hover:text-foreground font-mono text-sm uppercase tracking-widest transition-all duration-300 backdrop-blur-sm"
+          >
+            {copied ? (
+              <Check className="w-4 h-4 mr-3 text-primary" />
+            ) : (
+              <Copy className="w-4 h-4 mr-3" />
+            )}
+            {copied ? "Copied" : "Copy"}
+          </Button>
+
           <Button
             asChild
             variant="outline"
+            data-testid="button-share"
             className="w-full sm:w-auto h-14 px-8 rounded-none border-border/50 hover:bg-white/5 hover:text-foreground font-mono text-sm uppercase tracking-widest transition-all duration-300 backdrop-blur-sm"
           >
             <a href={tweetUrl} target="_blank" rel="noopener noreferrer">
               <FaXTwitter className="w-4 h-4 mr-3" />
-              Broadcast
+              Share
             </a>
           </Button>
         </div>
