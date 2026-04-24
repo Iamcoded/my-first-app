@@ -1,0 +1,18 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm --filter @workspace/crypto-quotes run build",
+  "outputDirectory": "artifacts/crypto-quotes/dist/public",
+  "framework": null,
+  "build": {
+    "env": {
+      "BASE_PATH": "/"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
