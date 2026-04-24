@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -23,16 +23,23 @@ function Home() {
     setCurrentQuoteIndex(Math.floor(Math.random() * quotes.length));
   }, []);
 
-  const handleNewQuote = () => {
-    if (isAnimating) return;
-    
+  const handleNewQuote = useCallback(() => {
     setIsAnimating(true);
-    let nextIndex = Math.floor(Math.random() * quotes.length);
-    while (nextIndex === currentQuoteIndex && quotes.length > 1) {
-      nextIndex = Math.floor(Math.random() * quotes.length);
-    }
-    setCurrentQuoteIndex(nextIndex);
-  };
+    setCurrentQuoteIndex((prev) => {
+      let nextIndex = Math.floor(Math.random() * quotes.length);
+      while (nextIndex === prev && quotes.length > 1) {
+        nextIndex = Math.floor(Math.random() * quotes.length);
+      }
+      return nextIndex;
+    });
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      handleNewQuote();
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [handleNewQuote, currentQuoteIndex]);
 
   const currentQuote = quotes[currentQuoteIndex] || quotes[0];
   const shareText = `"${currentQuote.text}" — ${currentQuote.author}`;
@@ -89,6 +96,23 @@ function Home() {
               </div>
             </motion.div>
           </AnimatePresence>
+
+          <div className="w-full flex justify-end mt-6 md:mt-8">
+            <Button
+              onClick={handleCopy}
+              variant="ghost"
+              size="sm"
+              data-testid="button-copy"
+              className="h-10 px-4 rounded-none border border-border/40 hover:bg-white/5 hover:text-foreground font-mono text-xs uppercase tracking-widest transition-all duration-300 backdrop-blur-sm"
+            >
+              {copied ? (
+                <Check className="w-3.5 h-3.5 mr-2 text-primary" />
+              ) : (
+                <Copy className="w-3.5 h-3.5 mr-2" />
+              )}
+              {copied ? "Copied" : "Copy"}
+            </Button>
+          </div>
         </div>
 
         <div className="mt-16 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 w-full mx-auto">
@@ -100,20 +124,6 @@ function Home() {
           >
             <RefreshCw className={`w-4 h-4 mr-3 ${isAnimating ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-500"}`} />
             Next Quote
-          </Button>
-
-          <Button
-            onClick={handleCopy}
-            variant="outline"
-            data-testid="button-copy"
-            className="w-full sm:w-auto h-14 px-8 rounded-none border-border/50 hover:bg-white/5 hover:text-foreground font-mono text-sm uppercase tracking-widest transition-all duration-300 backdrop-blur-sm"
-          >
-            {copied ? (
-              <Check className="w-4 h-4 mr-3 text-primary" />
-            ) : (
-              <Copy className="w-4 h-4 mr-3" />
-            )}
-            {copied ? "Copied" : "Copy"}
           </Button>
 
           <Button
